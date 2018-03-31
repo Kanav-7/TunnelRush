@@ -1,35 +1,11 @@
 var octrotation = 0.0;
-var cubeRotation = 0.0;
-var numocts = 400;
+var numocts = 500;
 // var numoctbw = 200;
 var trans = 0.0;
 var jump = 0;
 var vely = 0.0;
 var acc = 0.0;
 var pos = 0.0;
-var numobs = 30;
-var dist = 45.0;
-var pi = Math.PI
-var speed = 15; 
-var initrot = [];
-var initrotsped = [];
-var collflag = [];
-var lives = 3;
-var score = 0;
-
-for(var i=0;i<numobs;i++)
-{
-  initrot[i] = Math.random()*pi;
-  initrotsped[i] = 0;
-   -0.04 + Math.random()*0.08;
-  collflag[i] = 0;
-}
-
-initrotsped[0] = 0.0;
-initrotsped[1] = 0.0;
-initrotsped[2] = 0.0;
-initrotsped[3] = 0.0;
-
 main();
 
 //
@@ -96,11 +72,6 @@ function main() {
   // Here's where we call the routine that builds all the
   // objects we'll be drawing.
   const buffers = initBuffers(gl);
-  var buffersobs = [];
-
-  for(var i=0;i<numobs;i++)
-    buffersobs[i] = initBuffersobs(gl);
-
 
   var then = 0;
 
@@ -110,45 +81,8 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    drawScene(gl, programInfo, buffers,buffersobs, deltaTime);
+    drawScene(gl, programInfo, buffers, deltaTime);
 
-    for(var i=0;i<numobs;i++)
-    {
-      var tempu = (10000*pi + initrot[i] + octrotation)%pi;
-      if(trans <= dist*i + 0.2 && trans >= dist*i - 0.2 && (tempu%pi <= 0.65 || tempu%pi >= 2.5 || jump == 1)&& collflag[i] == 0 )
-      {
-        // console.log(initrot[i] + octrotation);
-        collflag[i] = 1;
-        alert('Life--');
-        lives--;
-        if(lives == 0)
-          break;
-      }
-
-      initrot[i]+=initrotsped[i];
-    }
-    score+=0.1
-    document.getElementById('Score').innerHTML = Math.floor(score);
-    document.getElementById('Lives').innerHTML = lives;
-    document.getElementById('Speed').innerHTML = speed*10;
-    if(lives == 0)
-    {
-      alert('Game Over!\nScore: ' + Math.floor(score));
-      lives = 3;
-      score = 0;
-      trans = 0.0;
-      speed = 15;
-      for(var i=0;i<numobs;i++)
-      {
-        initrot[i] = Math.random()*pi;
-        initrotsped[i] = -0.04 + Math.random()*0.08;
-        collflag[i] = 0;
-      }
-      initrotsped[0] = 0.0;
-      initrotsped[1] = 0.0;
-      initrotsped[2] = 0.0;
-    }
-    // score = Math.floor(score + 0.1);
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -182,7 +116,7 @@ Mousetrap.bind('right+space', function () {
   }
 })
 
-Mousetrap.bind('left+getShaderParameterce', function () {
+Mousetrap.bind('left+space', function () {
   octrotation+=0.1;
   if(jump == 0)
   {
@@ -210,111 +144,7 @@ Mousetrap.bind('space', function () {
 })
 
 
-function initBuffersobs(gl) {
 
-  // Create a buffer for the cube's vertex positions.
-
-  const positionBuffer = gl.createBuffer();
-
-  // Select the positionBuffer as the one to apply buffer
-  // operations to from here out.
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-  // Now create an array of positions for the cube.
-
-  const positions = [
-    // Front face
-    -0.1, -0.1,  0.1,
-     0.1, -0.1,  0.1,
-     0.1,  0.1,  0.1,
-    -0.1,  0.1,  0.1,
-
-    // Back face
-    -0.1, -0.1, -0.1,
-    -0.1,  0.1, -0.1,
-     0.1,  0.1, -0.1,
-     0.1, -0.1, -0.1,
-
-    // Top face
-    -0.1,  0.1, -0.1,
-    -0.1,  0.1,  0.1,
-     0.1,  0.1,  0.1,
-     0.1,  0.1, -0.1,
-
-    // Bottom face
-    -0.1, -0.1, -0.1,
-     0.1, -0.1, -0.1,
-     0.1, -0.1,  0.1,
-    -0.1, -0.1,  0.1,
-
-    // Right face
-     0.1, -0.1, -0.1,
-     0.1,  0.1, -0.1,
-     0.1,  0.1,  0.1,
-     0.1, -0.1,  0.1,
-
-    // Left face
-    -0.1, -0.1, -0.1,
-    -0.1, -0.1,  0.1,
-    -0.1,  0.1,  0.1,
-    -0.1,  0.1, -0.1,
-  ];
-
-  // Now pass the list of positions into WebGL to build the
-  // shape. We do this by creating a Float32Array from the
-  // JavaScript array, then use it to fill the current buffer.
-
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-  // Now set up the colors for the faces. We'll use solid colors
-  // for each face.
-
-  // Convert the array of colors into a table for all the vertices.
-
-  var colors = [];
-
-  for (var j = 0; j < 6; ++j) {
-    const c = [1.0,  0.0,  0.0,  1.0];
-
-    // Repeat each color four times for the four vertices of the face
-    colors = colors.concat(c, c, c, c);
-  }
-
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
-  // Build the element array buffer; this specifies the indices
-  // into the vertex arrays for each face's vertices.
-
-  const indexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-  // This array defines each face as two triangles, using the
-  // indices into the vertex array to specify each triangle's
-  // position.
-
-  const indices = [
-    0,  1,  2,      0,  2,  3,    // front
-    4,  5,  6,      4,  6,  7,    // back
-    8,  9,  10,     8,  10, 11,   // top
-    12, 13, 14,     12, 14, 15,   // bottom
-    16, 17, 18,     16, 18, 19,   // right
-    20, 21, 22,     20, 22, 23,   // left
-  ];
-
-  // Now send the element array to GL
-
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array(indices), gl.STATIC_DRAW);
-
-  return {
-    position: positionBuffer,
-    color: colorBuffer,
-    indices: indexBuffer,
-  };
-}
 
 function initBuffers(gl) {
 
@@ -404,32 +234,14 @@ function initBuffers(gl) {
   ];
   // Convert the array of colors into a table for all the vertices.
 
-   const faceColors = [
-    [1.0, 102/255,  1.0,  1.0],    // Front face: white
-    [1.0,  1.0,  102/255,  1.0],    // Top face: green
-    [51/255,  153/255,  1.0,  1.0],    // Bottom face: blue
-    [1.0,  1.0,  102/255,  1.0],    // Right face: yellow
-    [0.0,  102/255,  204/255,  1.0],    // Left face: purple
-    [0.0,  1.0,  1.0,  1.0],    // Left face: purple
-    [1.0,  0.0,  1.0,  1.0],    // Left face: purple
-    [1.0,  51/255,  1.0,  1.0],    // Left face: purple
-    [1.0,  153/255,  51/255,  1.0],    // Left face: purple
-    [51/255,  1.0,  51/255,  1.0],    // Left face: purple
-    [1.0,102/255,102/255,1.0]
-
-  ];
   var colors = [];
 
   for (var j = 0; j < 8*numocts; ++j) {
     // const c = faceColors[Math.floor(Math.random() * faceColors.length)];;
-    var start = 80;
+    var start = 60;
     var end = 100;
     var start2 = 140
-    var end2 = 170;
-    var start3 = 0;
-    var end3 = 30;
-    var start4 = 275;
-    var end4 = 325;
+    var end2 = 180;
     var c;
     if(j >= 8*start && j <= 8*end)
     {
@@ -439,7 +251,7 @@ function initBuffers(gl) {
       else
         c = [0.0,  0.0,  0.0,  1.0];
     }
-    else if ((j >= 8*start2 && j <= 8*end2) || (j >= 8*start3 && j <= 8*end3) || ((j >= 8*start4 && j <= 8*end4)))
+    else if (j >= 8*start2 && j <= 8*end2)
     {
 
       if((Math.floor(j/8))%2 == 0)
@@ -458,7 +270,6 @@ function initBuffers(gl) {
       }
     }
     else
-      // c = faceColors[Math.floor(Math.random() * 11)];
       c = [Math.floor(Math.random() * 256)/255.0,Math.floor(Math.random() * 256)/255.0,Math.floor(Math.random() * 256)/255.0,1.0];
     // Repeat each color four times for the four vertices of the face
     colors = colors.concat(c, c, c, c);
@@ -515,7 +326,7 @@ function initBuffers(gl) {
 //
 
 
-function drawScene(gl, programInfo, buffers,buffersobs, deltaTime) {
+function drawScene(gl, programInfo, buffers, deltaTime) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -560,7 +371,7 @@ function drawScene(gl, programInfo, buffers,buffersobs, deltaTime) {
               modelViewMatrix,  // matrix to rotate
               octrotation,     // amount to rotate in radians
               [0, 0, 1]);       // axis to rotate around (Z)
-  // console.log(octrotation + "Tunn")
+  
 
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute
@@ -630,25 +441,9 @@ function drawScene(gl, programInfo, buffers,buffersobs, deltaTime) {
   // Update the rotation for the next draw
 
 //   octrotation += deltaTime;
-
-
-  for(var i=0;i<numobs;i++)
-      drawSceneobs(gl, programInfo, buffersobs[i], i,deltaTime);
-
-console.log(octrotation);
-
-trans+=deltaTime*speed;
-speed+=.005;
+trans+=deltaTime*15;
 if(trans >= 600)
-{
-  for(var i=0;i<numobs;i++)
-  {
-    initrot[i] = Math.random()*pi;
-    initrotsped[i] = -0.04 + Math.random()*0.08;
-    collflag[i] = 0;
-  }
   trans = 0;
-}
 
 if(jump == 1)
 {
@@ -665,124 +460,6 @@ if(pos >= 0)
 
 }
 
-
-function drawSceneobs(gl, programInfo, buffers,ind, deltaTime) {
-  // gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
-  // gl.clearDepth(1.0);                 // Clear everything
-  // gl.enable(gl.DEPTH_TEST);           // Enable depth testing
-  // gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-
-  // // Clear the canvas before we start drawing on it.
-
-  // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  // Create a perspective matrix, a special matrix that is
-  // used to simulate the distortion of perspective in a camera.
-  // Our field of view is 45 degrees, with a width/height
-  // ratio that matches the display size of the canvas
-  // and we only want to see objects between 0.1 units
-  // and 100 units away from the camera.
-
-  const fieldOfView = 45 * Math.PI / 180;   // in radians
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const zNear = 0.1;
-  const zFar = 100.0;
-  const projectionMatrix = mat4.create();
-
-  // note: glmatrix.js always has the first argument
-  // as the destination to receive the result.
-  mat4.perspective(projectionMatrix,
-                   fieldOfView,
-                   aspect,
-                   zNear,
-                   zFar);
-
-  // Set the drawing position to the "identity" point, which is
-  // the center of the scene.
-  const modelViewMatrix = mat4.create();
-
-  // Now move the drawing position a bit to where we want to
-  // start drawing the square.
-
-  mat4.translate(modelViewMatrix,     // destination matrix
-                 modelViewMatrix,     // matrix to translate
-                 [0.0,  0.75+pos , -dist*ind + trans]);  // amount to translate
-  mat4.rotate(modelViewMatrix,  // destination matrix
-              modelViewMatrix,  // matrix to rotate
-              initrot[ind] + octrotation,     // amount to rotate in radians
-              [0, 0, 1]);       // axis to rotate around (Z)
-  mat4.scale(modelViewMatrix,     // destination matrix
-                 modelViewMatrix,     // matrix to translate
-                 [2.0, 10.0, 1.0]);  // amount to translate
-
-  // Tell WebGL how to pull out the positions from the position
-  // buffer into the vertexPosition attribute
-  {
-    const numComponents = 3;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-    gl.vertexAttribPointer(
-        programInfo.attribLocations.vertexPosition,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexPosition);
-  }
-
-  // Tell WebGL how to pull out the colors from the color buffer
-  // into the vertexColor attribute.
-  {
-    const numComponents = 4;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-    gl.vertexAttribPointer(
-        programInfo.attribLocations.vertexColor,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexColor);
-  }
-
-  // Tell WebGL which indices to use to index the vertices
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-
-  // Tell WebGL to use our program when drawing
-
-  gl.useProgram(programInfo.program);
-
-  // Set the shader uniforms
-
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.projectionMatrix,
-      false,
-      projectionMatrix);
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.modelViewMatrix,
-      false,
-      modelViewMatrix);
-
-  {
-    const vertexCount = 36;
-    const type = gl.UNSIGNED_SHORT;
-    const offset = 0;
-    gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-  }
-
-  // Update the rotation for the next draw
-
-}
 //
 // Initialize a shader program, so WebGL knows how to draw our data
 //

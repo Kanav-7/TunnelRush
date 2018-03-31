@@ -7,29 +7,6 @@ var jump = 0;
 var vely = 0.0;
 var acc = 0.0;
 var pos = 0.0;
-var numobs = 30;
-var dist = 45.0;
-var pi = Math.PI
-var speed = 15; 
-var initrot = [];
-var initrotsped = [];
-var collflag = [];
-var lives = 3;
-var score = 0;
-
-for(var i=0;i<numobs;i++)
-{
-  initrot[i] = Math.random()*pi;
-  initrotsped[i] = 0;
-   -0.04 + Math.random()*0.08;
-  collflag[i] = 0;
-}
-
-initrotsped[0] = 0.0;
-initrotsped[1] = 0.0;
-initrotsped[2] = 0.0;
-initrotsped[3] = 0.0;
-
 main();
 
 //
@@ -98,7 +75,7 @@ function main() {
   const buffers = initBuffers(gl);
   var buffersobs = [];
 
-  for(var i=0;i<numobs;i++)
+  for(var i=0;i<40;i++)
     buffersobs[i] = initBuffersobs(gl);
 
 
@@ -112,43 +89,8 @@ function main() {
 
     drawScene(gl, programInfo, buffers,buffersobs, deltaTime);
 
-    for(var i=0;i<numobs;i++)
-    {
-      var tempu = (10000*pi + initrot[i] + octrotation)%pi;
-      if(trans <= dist*i + 0.2 && trans >= dist*i - 0.2 && (tempu%pi <= 0.65 || tempu%pi >= 2.5 || jump == 1)&& collflag[i] == 0 )
-      {
-        // console.log(initrot[i] + octrotation);
-        collflag[i] = 1;
-        alert('Life--');
-        lives--;
-        if(lives == 0)
-          break;
-      }
 
-      initrot[i]+=initrotsped[i];
-    }
-    score+=0.1
-    document.getElementById('Score').innerHTML = Math.floor(score);
-    document.getElementById('Lives').innerHTML = lives;
-    document.getElementById('Speed').innerHTML = speed*10;
-    if(lives == 0)
-    {
-      alert('Game Over!\nScore: ' + Math.floor(score));
-      lives = 3;
-      score = 0;
-      trans = 0.0;
-      speed = 15;
-      for(var i=0;i<numobs;i++)
-      {
-        initrot[i] = Math.random()*pi;
-        initrotsped[i] = -0.04 + Math.random()*0.08;
-        collflag[i] = 0;
-      }
-      initrotsped[0] = 0.0;
-      initrotsped[1] = 0.0;
-      initrotsped[2] = 0.0;
-    }
-    // score = Math.floor(score + 0.1);
+
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -182,7 +124,7 @@ Mousetrap.bind('right+space', function () {
   }
 })
 
-Mousetrap.bind('left+getShaderParameterce', function () {
+Mousetrap.bind('left+space', function () {
   octrotation+=0.1;
   if(jump == 0)
   {
@@ -255,10 +197,10 @@ function initBuffersobs(gl) {
      0.1, -0.1,  0.1,
 
     // Left face
-    -0.1, -0.1, -0.1,
-    -0.1, -0.1,  0.1,
-    -0.1,  0.1,  0.1,
-    -0.1,  0.1, -0.1,
+    -1.0, -1.0, -1.0,
+    -1.0, -1.0,  1.0,
+    -1.0,  1.0,  1.0,
+    -1.0,  1.0, -1.0,
   ];
 
   // Now pass the list of positions into WebGL to build the
@@ -404,32 +346,14 @@ function initBuffers(gl) {
   ];
   // Convert the array of colors into a table for all the vertices.
 
-   const faceColors = [
-    [1.0, 102/255,  1.0,  1.0],    // Front face: white
-    [1.0,  1.0,  102/255,  1.0],    // Top face: green
-    [51/255,  153/255,  1.0,  1.0],    // Bottom face: blue
-    [1.0,  1.0,  102/255,  1.0],    // Right face: yellow
-    [0.0,  102/255,  204/255,  1.0],    // Left face: purple
-    [0.0,  1.0,  1.0,  1.0],    // Left face: purple
-    [1.0,  0.0,  1.0,  1.0],    // Left face: purple
-    [1.0,  51/255,  1.0,  1.0],    // Left face: purple
-    [1.0,  153/255,  51/255,  1.0],    // Left face: purple
-    [51/255,  1.0,  51/255,  1.0],    // Left face: purple
-    [1.0,102/255,102/255,1.0]
-
-  ];
   var colors = [];
 
   for (var j = 0; j < 8*numocts; ++j) {
     // const c = faceColors[Math.floor(Math.random() * faceColors.length)];;
-    var start = 80;
+    var start = 60;
     var end = 100;
     var start2 = 140
-    var end2 = 170;
-    var start3 = 0;
-    var end3 = 30;
-    var start4 = 275;
-    var end4 = 325;
+    var end2 = 180;
     var c;
     if(j >= 8*start && j <= 8*end)
     {
@@ -439,7 +363,7 @@ function initBuffers(gl) {
       else
         c = [0.0,  0.0,  0.0,  1.0];
     }
-    else if ((j >= 8*start2 && j <= 8*end2) || (j >= 8*start3 && j <= 8*end3) || ((j >= 8*start4 && j <= 8*end4)))
+    else if (j >= 8*start2 && j <= 8*end2)
     {
 
       if((Math.floor(j/8))%2 == 0)
@@ -458,7 +382,6 @@ function initBuffers(gl) {
       }
     }
     else
-      // c = faceColors[Math.floor(Math.random() * 11)];
       c = [Math.floor(Math.random() * 256)/255.0,Math.floor(Math.random() * 256)/255.0,Math.floor(Math.random() * 256)/255.0,1.0];
     // Repeat each color four times for the four vertices of the face
     colors = colors.concat(c, c, c, c);
@@ -560,7 +483,7 @@ function drawScene(gl, programInfo, buffers,buffersobs, deltaTime) {
               modelViewMatrix,  // matrix to rotate
               octrotation,     // amount to rotate in radians
               [0, 0, 1]);       // axis to rotate around (Z)
-  // console.log(octrotation + "Tunn")
+  console.log(octrotation + "Tunn")
 
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute
@@ -632,23 +555,12 @@ function drawScene(gl, programInfo, buffers,buffersobs, deltaTime) {
 //   octrotation += deltaTime;
 
 
-  for(var i=0;i<numobs;i++)
+  for(var i=0;i<40;i++)
       drawSceneobs(gl, programInfo, buffersobs[i], i,deltaTime);
 
-console.log(octrotation);
-
-trans+=deltaTime*speed;
-speed+=.005;
+trans+=deltaTime*15;
 if(trans >= 600)
-{
-  for(var i=0;i<numobs;i++)
-  {
-    initrot[i] = Math.random()*pi;
-    initrotsped[i] = -0.04 + Math.random()*0.08;
-    collflag[i] = 0;
-  }
   trans = 0;
-}
 
 if(jump == 1)
 {
@@ -706,14 +618,15 @@ function drawSceneobs(gl, programInfo, buffers,ind, deltaTime) {
 
   mat4.translate(modelViewMatrix,     // destination matrix
                  modelViewMatrix,     // matrix to translate
-                 [0.0,  0.75+pos , -dist*ind + trans]);  // amount to translate
+                 [0.0,  pos , -100.0*ind + trans]);  // amount to translate
+  // mat4.scale(modelViewMatrix,     // destination matrix
+  //                modelViewMatrix,     // matrix to translate
+  //                [0.1, 1.0, 0.1]);  // amount to translate
   mat4.rotate(modelViewMatrix,  // destination matrix
               modelViewMatrix,  // matrix to rotate
-              initrot[ind] + octrotation,     // amount to rotate in radians
+               octrotation,     // amount to rotate in radians
               [0, 0, 1]);       // axis to rotate around (Z)
-  mat4.scale(modelViewMatrix,     // destination matrix
-                 modelViewMatrix,     // matrix to translate
-                 [2.0, 10.0, 1.0]);  // amount to translate
+  console.log(octrotation + "Obs")
 
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute
