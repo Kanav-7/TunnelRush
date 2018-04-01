@@ -16,7 +16,9 @@ var initrotsped = [];
 var collflag = [];
 var lives = 3;
 var score = 0;
-
+var grayScala = false;
+var flashScala = false;
+var level = 1;
 for(var i=0;i<numobs;i++)
 {
   initrot[i] = Math.random()*pi;
@@ -39,8 +41,8 @@ main();
 function main() {
   const canvas = document.querySelector('#glcanvas');
   const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-const texture = loadTexture(gl, 'tex2.jpg');
-const texture1 = loadTexture(gl, 'obs.jpg');
+  const texture = loadTexture(gl, 'tex.jpg');
+  const texture1 = loadTexture(gl, 'obs.jpg');
 
 
   // If we don't have a GL context, give up now
@@ -52,30 +54,66 @@ const texture1 = loadTexture(gl, 'obs.jpg');
 
   // Vertex shader program
 
- const vsSource = `
+  const vsSource = `
     attribute vec4 aVertexPosition;
+    attribute vec3 aVertexNormal;
     attribute vec2 aTextureCoord;
 
+    uniform mat4 uNormalMatrix;
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
+    uniform bool flashScala;
 
     varying highp vec2 vTextureCoord;
+    varying highp vec3 vLighting;
 
     void main(void) {
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
       vTextureCoord = aTextureCoord;
+
+      // Apply lighting effect
+
+      highp vec3 directionalLightColor = vec3(0.6, 0.6, 0.6);
+      if (flashScala == true)
+        directionalLightColor = vec3(1.5, 1.5, 1.5);        
+      
+      highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);
+      highp vec3 directionalVector = normalize(vec3(0, -2.0, 10));
+
+      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+
+      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+      vLighting = ambientLight + (directionalLightColor * directional);
     }
   `;
 
   // Fragment shader program
 
-   const fsSource = `
+  const fsSource = `
+    precision mediump float;
     varying highp vec2 vTextureCoord;
-
+    varying highp vec3 vLighting;
+    
     uniform sampler2D uSampler;
-
+    uniform float now;
+    uniform bool grayScala;
+    
+    vec4 toGrayscale(in vec4 color) {
+      float average = (color.r + color.g + color.b) / 3.0;
+      return vec4(average, average, average, 1.0);
+      
+    }
+    
+    
     void main(void) {
-      gl_FragColor = texture2D(uSampler, vTextureCoord);
+      
+      highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
+      
+      if (grayScala == true)
+        gl_FragColor = toGrayscale(vec4(texelColor.rgb * vLighting, texelColor.a));   
+
+      else
+        gl_FragColor = vec4(texelColor.rgb *vLighting, texelColor.a);
     }
   `;
 
@@ -87,16 +125,20 @@ const texture1 = loadTexture(gl, 'obs.jpg');
   // Look up which attributes our shader program is using
   // for aVertexPosition, aVevrtexColor and also
   // look up uniform locations.
- const programInfo = {
+   const programInfo = {
     program: shaderProgram,
     attribLocations: {
       vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
       textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
       modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
+      grayScala: gl.getUniformLocation(shaderProgram, 'grayScala'),
       uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+      flashScala: gl.getUniformLocation(shaderProgram, 'flashScala'),
     },
   };
 
@@ -126,7 +168,7 @@ const texture1 = loadTexture(gl, 'obs.jpg');
       {
         // console.log(initrot[i] + octrotation);
         collflag[i] = 1;
-        alert('Life--');
+        // alert('Life--');
         lives--;
         if(lives == 0)
           break;
@@ -134,9 +176,37 @@ const texture1 = loadTexture(gl, 'obs.jpg');
 
       initrot[i]+=initrotsped[i];
     }
+      
+    gl.uniform1i(programInfo.uniformLocations.flashScala, flashScala);
+    gl.uniform1i(programInfo.uniformLocations.grayScala, grayScala);
+    if (now%5 > 4.2)
+        flashScala = true;
+    else 
+        flashScala = false;
+
     score+=0.1
+
+    if(Math.floor(score) > 50)
+    {
+      level = 2;
+      speed = 20;
+    }
+
+    if(Math.floor(score) > 150)
+    {
+      level = 3;
+      speed = 25;
+    }
+
+    if(Math.floor(score) > 250)
+    {
+      level = 4;
+      speed = 30;
+    }
+
     document.getElementById('Score').innerHTML = Math.floor(score);
     document.getElementById('Lives').innerHTML = lives;
+    document.getElementById('Level').innerHTML = level;
     document.getElementById('Speed').innerHTML = speed*10;
     if(lives == 0)
     {
@@ -214,6 +284,16 @@ Mousetrap.bind('space', function () {
     vely = -0.1;
     acc = 0.005
   }
+})
+
+Mousetrap.bind('b', function () {
+  //console.log("mouse");
+  grayScala = !grayScala
+  //cubeRotation -= zrotate;
+})
+
+Mousetrap.bind('p', function () {
+    togglePause();
 })
 
 
@@ -340,45 +420,45 @@ function initBuffers(gl) {
   var s = (Math.sqrt(2) - 1) * h;
 
   temp = [
-    // Front face
+    // Front face  // (0,4,0)
      s, h,  1.0,
     -s, h,  1.0,
      s, h, -1.0,
     -s, h, -1.0,
 
-    // Back face
+    // Back face // (-1.2, -1.2, 0) 
      s, h,  1.0,
      h, s,  1.0,
      s, h, -1.0,
      h, s, -1.0,
 
-    // Top face
+    // Top face  (4, 0, 0) 
      h, s,  1.0,
      h,-s,  1.0,
      h, s, -1.0,
      h,-s, -1.0,
 
-     h,-s,  1.0,
+     h,-s,  1.0,  // (-1.2, 1.2, 0)
      s,-h,  1.0,
      h,-s, -1.0,
      s,-h, -1.0,
 
-     s,-h,  1.0,
+     s,-h,  1.0, //  (0, -4, 0) 
     -s,-h,  1.0,
      s,-h, -1.0,
     -s,-h, -1.0,
 
-    -s,-h,  1.0,
+    -s,-h,  1.0, //  (1.2, 1.2, 0) 
     -h,-s,  1.0,
     -s,-h, -1.0,
     -h,-s, -1.0,
 
-    -h,-s,  1.0,
+    -h,-s,  1.0, //  (-4, 0, 0) 
     -h, s,  1.0,
     -h,-s, -1.0,
     -h, s, -1.0,
 
-    -h, s,  1.0,
+    -h, s,  1.0, // (1.2, -1.2, 0)s
     -s, h,  1.0,
     -h, s, -1.0,
     -s, h, -1.0,
@@ -484,6 +564,31 @@ function initBuffers(gl) {
   // Build the element array buffer; this specifies the indices
   // into the vertex arrays for each face's vertices.
 
+  var vertexNormals = [];
+  var c = [
+      [5.65, 2.34, 0],
+      [2.34, 5.65, 0],
+      [-2.34, 5.65, 0],
+      [-5.65, 2.34, 0],
+      [-5.65, -2.34, 0],
+      [-2.34, -5.65, 0],
+      [2.34, -5.65, 0],
+      [5.65, -2.34, 0]
+  ];
+  for (var j = 0; j < numocts; ++j)
+  {
+    for(var k= 0;k < 8;k++)
+    {
+      vertexNormals = vertexNormals.concat(c[k],c[k],c[k],c[k]);
+    }
+  }
+
+  const normalBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals),
+                gl.STATIC_DRAW);
+
+
   const indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
@@ -518,6 +623,7 @@ function initBuffers(gl) {
 
   return {
     position: positionBuffer,
+    normal: normalBuffer,
     textureCoord: textureCoordBuffer,
     indices: indexBuffer,
   };
@@ -574,6 +680,9 @@ function drawScene(gl, programInfo, buffers,buffersobs,texture, texture1,deltaTi
               octrotation,     // amount to rotate in radians
               [0, 0, 1]);       // axis to rotate around (Z)
   // console.log(octrotation + "Tunn")
+  const normalMatrix = mat4.create();
+  mat4.invert(normalMatrix, modelViewMatrix);
+  mat4.transpose(normalMatrix, normalMatrix);
 
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute
@@ -608,6 +717,24 @@ function drawScene(gl, programInfo, buffers,buffersobs,texture, texture1,deltaTi
     gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
 }
 
+ {
+    const numComponents = 3;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+    gl.vertexAttribPointer(
+        programInfo.attribLocations.vertexNormal,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.attribLocations.vertexNormal);
+  }
+
   // Tell WebGL which indices to use to index the vertices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
@@ -625,7 +752,10 @@ function drawScene(gl, programInfo, buffers,buffersobs,texture, texture1,deltaTi
       programInfo.uniformLocations.modelViewMatrix,
       false,
       modelViewMatrix);
-
+  gl.uniformMatrix4fv(
+      programInfo.uniformLocations.normalMatrix,
+      false,
+      normalMatrix);
   gl.activeTexture(gl.TEXTURE0);
 
   // Bind the texture to texture unit 0
@@ -652,7 +782,7 @@ function drawScene(gl, programInfo, buffers,buffersobs,texture, texture1,deltaTi
 console.log(octrotation);
 
 trans+=deltaTime*speed;
-speed+=.005;
+// speed+=.005;
 if(trans >= 600)
 {
   for(var i=0;i<numobs;i++)
@@ -730,6 +860,8 @@ function drawSceneobs(gl, programInfo, buffers,ind, texture,deltaTime) {
                  modelViewMatrix,     // matrix to translate
                  [2.0, 10.0, 1.0]);  // amount to translate
 
+
+
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute
   {
@@ -762,6 +894,8 @@ function drawSceneobs(gl, programInfo, buffers,ind, texture,deltaTime) {
     gl.vertexAttribPointer(programInfo.attribLocations.textureCoord, num, type, normalize, stride, offset);
     gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
   }
+
+ 
 
   // Tell WebGL which indices to use to index the vertices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
